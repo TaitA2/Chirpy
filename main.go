@@ -12,12 +12,12 @@ func main() {
 
 	serveMux := http.NewServeMux()
 
-	handler := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
+	handler := http.StripPrefix("/app/", http.FileServer(http.Dir(".")))
 
 	serveMux.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
-	serveMux.HandleFunc("/healthz/", handlerReadiness)
-	serveMux.HandleFunc("/metrics/", apiCfg.handlerMetrics)
-	serveMux.HandleFunc("/reset/", apiCfg.handlerReset)
+	serveMux.HandleFunc("GET /api/healthz", handlerReadiness)
+	serveMux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
+	serveMux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 
 	server := &http.Server{Handler: serveMux, Addr: ":8080"}
 	server.ListenAndServe()
@@ -41,9 +41,14 @@ func handlerReadiness(writer http.ResponseWriter, req *http.Request) {
 }
 
 func (apiCfg *apiConfig) handlerMetrics(writer http.ResponseWriter, req *http.Request) {
-	writer.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	writer.Header().Add("Content-Type", "text/html")
 	writer.WriteHeader(200)
-	writer.Write(fmt.Appendf(nil, "Hits: %v", apiCfg.fileserverHits.Load()))
+	writer.Write(fmt.Appendf(nil, `<html>
+  <body>
+    <h1>Welcome, Chirpy Admin</h1>
+    <p>Chirpy has been visited %d times!</p>
+  </body>
+</html>`, apiCfg.fileserverHits.Load()))
 }
 
 func (apiCfg *apiConfig) handlerReset(writer http.ResponseWriter, req *http.Request) {
