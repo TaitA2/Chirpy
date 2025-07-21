@@ -11,11 +11,13 @@ type apiConfig struct {
 
 func main() {
 
+	const rootPath = "."
+	const port = "8080"
 	var apiCfg apiConfig
 
 	serveMux := http.NewServeMux()
 
-	handler := http.StripPrefix("/app/", http.FileServer(http.Dir(".")))
+	handler := http.StripPrefix("/app/", http.FileServer(http.Dir(rootPath)))
 
 	serveMux.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
 	serveMux.HandleFunc("GET /api/healthz", handlerReadiness)
@@ -23,6 +25,6 @@ func main() {
 	serveMux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 	serveMux.HandleFunc("POST /api/validate_chirp", handlerValidate)
 
-	server := &http.Server{Handler: serveMux, Addr: ":8080"}
+	server := &http.Server{Handler: serveMux, Addr: ":" + port}
 	server.ListenAndServe()
 }

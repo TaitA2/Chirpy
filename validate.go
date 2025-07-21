@@ -4,22 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func handlerValidate(w http.ResponseWriter, r *http.Request) {
-
-	type parameters struct {
-		Body string `json:"body"`
-	}
-
-	type errReturn struct {
-		Error string `json:"error"`
-	}
-
-	type validReturn struct {
-		Valid bool `json:"valid"`
-	}
-
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
@@ -38,6 +26,7 @@ func handlerValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Ensure Chirp does not exceed 140 character limit
 	if len(params.Body) > 140 {
 		log.Printf("Chirp too long")
 
@@ -51,8 +40,14 @@ func handlerValidate(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 		return
 	}
+
+	// Profanity filter
+	cleanedBody := cleanBody(params.Body)
+	log.Printf("Censored: %s", params.Body)
+
+	// Chirp is valid
 	log.Printf("Valid Chirp")
-	resp := validReturn{Valid: true}
+	resp := validReturn{CleanedBody: cleanedBody}
 	data, err := json.Marshal(resp)
 	if err != nil {
 		log.Printf("Error marshalling error response: %v", err)
@@ -61,4 +56,30 @@ func handlerValidate(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Write(data)
 
+}
+
+func cleanBody(body string) string {
+	const censor = "****"
+	profanes := []string{"kerfuffle", "sharbert", "fornax"}
+	words := strings.Split(body, " ")
+	for i := range words {
+		for j := range profanes {
+			if strings.ToLower(words[i]) == profanes[j] {
+				words[i] = censor
+			}
+		}
+	}
+	return strings.Join(words, " ")
+}
+
+type parameters struct {
+	Body string `json:"body"`
+}
+
+type errReturn struct {
+	Error string `json:"error"`
+}
+
+type validReturn struct {
+	CleanedBody string `json:"cleaned_body"`
 }
