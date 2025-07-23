@@ -8,6 +8,35 @@ import (
 	"github.com/TaitA2/Chirpy/internal/database"
 )
 
+func (apiCfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
+	chirps, err := apiCfg.dbQueries.GetChirps(r.Context())
+	if err != nil {
+		log.Printf("Error getting chirps: %v", err)
+		resp := errReturn{Error: "Something getting chirps"}
+		data, err := json.Marshal(resp)
+		if err != nil {
+			log.Printf("Error marshalling error response: %v", err)
+		}
+
+		w.WriteHeader(500)
+		w.Write(data)
+		return
+	}
+	resp := []database.Chirp{}
+	for i := range chirps {
+		resp = append(resp, chirps[i])
+	}
+	data, err := json.Marshal(resp)
+	if err != nil {
+		log.Printf("Error marshalling error response: %v", err)
+	}
+
+	w.WriteHeader(500)
+	w.Write(data)
+	return
+
+}
+
 func (apiCfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 	chirp, err := validateChirp(w, r)
 	if err != nil {
@@ -21,7 +50,6 @@ func (apiCfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("Error creating database entry for chirp: %v", err)
-		log.Printf("Want: %v, Have: %v", chirp.UserID, dbChrip.UserID)
 		resp := errReturn{Error: "Something went wrong"}
 		data, err := json.Marshal(resp)
 		if err != nil {
