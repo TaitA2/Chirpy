@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
-func handlerValidate(w http.ResponseWriter, r *http.Request) {
+func validateChirp(w http.ResponseWriter, r *http.Request) (validReturn, error) {
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
@@ -23,7 +25,7 @@ func handlerValidate(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(500)
 		w.Write(data)
-		return
+		return validReturn{}, err
 	}
 
 	// Ensure Chirp does not exceed 140 character limit
@@ -38,7 +40,7 @@ func handlerValidate(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(400)
 		w.Write(data)
-		return
+		return validReturn{}, err
 	}
 
 	// Profanity filter
@@ -47,14 +49,12 @@ func handlerValidate(w http.ResponseWriter, r *http.Request) {
 
 	// Chirp is valid
 	log.Printf("Valid Chirp")
-	resp := validReturn{CleanedBody: cleanedBody}
-	data, err := json.Marshal(resp)
-	if err != nil {
-		log.Printf("Error marshalling error response: %v", err)
+	resp := validReturn{
+		CleanedBody: cleanedBody,
+		UserID:      params.UserID,
 	}
 
-	w.WriteHeader(200)
-	w.Write(data)
+	return resp, nil
 
 }
 
@@ -73,7 +73,8 @@ func cleanBody(body string) string {
 }
 
 type parameters struct {
-	Body string `json:"body"`
+	Body   string    `json:"body"`
+	UserID uuid.UUID `json:"user_id"`
 }
 
 type errReturn struct {
@@ -81,5 +82,6 @@ type errReturn struct {
 }
 
 type validReturn struct {
-	CleanedBody string `json:"cleaned_body"`
+	CleanedBody string    `json:"cleaned_body"`
+	UserID      uuid.UUID `json:"user_id"`
 }
