@@ -15,14 +15,14 @@ func (apiCfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request)
 	chirpID, err := uuid.Parse(strings.TrimPrefix(r.URL.Path, "/api/chirps/"))
 	if err != nil {
 		error := fmt.Sprintf("Error parsing url: %v", err)
-		errResponse(w, error)
+		errResponse(w, error, 500)
 		return
 	}
 	log.Printf("chirp id: %v", chirpID)
 	chirp, err := apiCfg.dbQueries.GetChirp(r.Context(), chirpID)
 	if err != nil {
 		error := fmt.Sprintf("Error getting chirp: %v", err)
-		errResponse(w, error)
+		errResponse(w, error, 404)
 		return
 	}
 	data, err := json.Marshal(chirp)
@@ -77,7 +77,7 @@ func (apiCfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		error := fmt.Sprintf("Error creating database entry for chirp: %v", err)
-		errResponse(w, error)
+		errResponse(w, error, 500)
 		return
 	}
 
@@ -87,7 +87,7 @@ func (apiCfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func errResponse(w http.ResponseWriter, s string) {
+func errResponse(w http.ResponseWriter, s string, code int) {
 	log.Printf("%s", s)
 	resp := errReturn{Error: s}
 	data, err := json.Marshal(resp)
@@ -95,6 +95,6 @@ func errResponse(w http.ResponseWriter, s string) {
 		log.Printf("Error marshalling error response: %v", err)
 	}
 
-	w.WriteHeader(500)
+	w.WriteHeader(code)
 	w.Write(data)
 }
