@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/TaitA2/Chirpy/internal/auth"
 	"github.com/TaitA2/Chirpy/internal/database"
 	"github.com/google/uuid"
 )
@@ -36,6 +37,7 @@ func (apiCfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request)
 
 }
 func (apiCfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
+
 	chirps, err := apiCfg.dbQueries.GetChirps(r.Context())
 	if err != nil {
 		log.Printf("Error getting chirps: %v", err)
@@ -65,6 +67,19 @@ func (apiCfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request
 }
 
 func (apiCfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
+
+	// auth
+	tokenString, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		errResponse(w, fmt.Sprintf("%v", err), 401)
+		return
+	}
+	userID, err := auth.ValidateJWT(tokenString, apiCfg.jwtSecret)
+	if err != nil {
+		errResponse(w, fmt.Sprintf("%v", err), 401)
+		return
+	}
+
 	chirp, err := validateChirp(w, r)
 	if err != nil {
 		log.Printf("Error validating chrip: %v", err)
@@ -73,7 +88,7 @@ func (apiCfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 
 	dbChrip, err := apiCfg.dbQueries.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   chirp.CleanedBody,
-		UserID: chirp.UserID,
+		UserID: userID,
 	})
 	if err != nil {
 		error := fmt.Sprintf("Error creating database entry for chirp: %v", err)
