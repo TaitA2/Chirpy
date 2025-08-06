@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,17 +14,17 @@ import (
 )
 
 type userParams struct {
-	Password         string `json:"password"`
-	Email            string `json:"email"`
-	ExpiresInSeconds int    `json:"expires_in_seconds,omitempty"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
 }
 
 type secureUser struct {
-	ID          uuid.UUID
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Email       string
-	TokenString string
+	ID           uuid.UUID
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	Email        string
+	Token        string
+	RefreshToken string
 }
 
 func (apiCfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
@@ -49,13 +50,26 @@ func (apiCfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenString, err := auth.MakeJWT(user.ID, apiCfg.jwtSecret, params.ExpiresInSeconds)
+	AccessJWT, err := auth.MakeJWT(user.ID, apiCfg.jwtSecret)
 	if err != nil {
 		error := fmt.Sprintf("Error making JWT.: %v", err)
 		errResponse(w, error, 401)
 		return
 	}
-	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, tokenString})
+
+	RefreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		error := fmt.Sprintf("Error making refresh token: %v", err)
+		errResponse(w, error, 401)
+		return
+	}
+	apiCfg.dbQueries.CreateToken(context.Background(), database.CreateTokenParams{
+		Token:     RefreshToken,
+		UserID:    user.ID,
+		ExpiresAt: time.Now().UTC().Add(time.Duration(time.Hour * 24 * 60)),
+	})
+
+	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, AccessJWT, RefreshToken})
 
 	if err != nil {
 		log.Printf("Error marshalling error response: %v", err)
@@ -97,13 +111,13 @@ func (apiCfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// jsonify
-	tokenString, err := auth.MakeJWT(user.ID, apiCfg.jwtSecret, params.ExpiresInSeconds)
+	tokenString, err := auth.MakeJWT(user.ID, apiCfg.jwtSecret)
 	if err != nil {
 		error := fmt.Sprintf("Error making JWT.: %v", err)
 		errResponse(w, error, 401)
 		return
 	}
-	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, tokenString})
+	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, tokenString, ""})
 
 	if err != nil {
 		log.Printf("Error marshalling error response: %v", err)
