@@ -13,9 +13,9 @@ import (
 )
 
 type userParams struct {
-	Password         string        `json:"password"`
-	Email            string        `json:"email"`
-	ExpiresInSeconds time.Duration `json:"expires_in_seconds,omitempty"`
+	Password         string `json:"password"`
+	Email            string `json:"email"`
+	ExpiresInSeconds int    `json:"expires_in_seconds,omitempty"`
 }
 
 type secureUser struct {
@@ -36,9 +36,6 @@ func (apiCfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		errResponse(w, error, 500)
 		return
 	}
-	if 1 > params.ExpiresInSeconds || params.ExpiresInSeconds > time.Hour {
-		params.ExpiresInSeconds = time.Hour
-	}
 	log.Printf("Login Params: %v", params)
 	user, err := apiCfg.dbQueries.GetUserByEmail(r.Context(), params.Email)
 	if err != nil {
@@ -52,7 +49,7 @@ func (apiCfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenString, err := auth.MakeJWT(user.ID, apiCfg.jwtSecret, time.Duration(params.ExpiresInSeconds))
+	tokenString, err := auth.MakeJWT(user.ID, apiCfg.jwtSecret, params.ExpiresInSeconds)
 	if err != nil {
 		error := fmt.Sprintf("Error making JWT.: %v", err)
 		errResponse(w, error, 401)
@@ -100,7 +97,13 @@ func (apiCfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// jsonify
-	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, ""})
+	tokenString, err := auth.MakeJWT(user.ID, apiCfg.jwtSecret, params.ExpiresInSeconds)
+	if err != nil {
+		error := fmt.Sprintf("Error making JWT.: %v", err)
+		errResponse(w, error, 401)
+		return
+	}
+	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, tokenString})
 
 	if err != nil {
 		log.Printf("Error marshalling error response: %v", err)
