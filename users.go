@@ -82,6 +82,63 @@ func (apiCfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (apiCfg *apiConfig) handlerUserUpdate(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		errResponse(w, fmt.Sprintf("Error getting bearer token: %v", err), 401)
+		return
+	}
+	dbToken, err := apiCfg.dbQueries.GetToken(context.Background(), token)
+	if err != nil {
+		errResponse(w, fmt.Sprintf("Error retrieving token: %v", err), 401)
+		return
+	}
+
+	// get new user params
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+	var params userParams
+	err = decoder.Decode(&params)
+	if err != nil {
+		error := fmt.Sprintf("Error decoding paramters: %s", err)
+		errResponse(w, error, 500)
+		return
+	}
+
+	// hash pw
+	hashedPw, err := auth.HashPassword(params.Password)
+	if err != nil {
+		error := fmt.Sprintf("Error hashing password: %s", err)
+		errResponse(w, error, 500)
+		return
+
+	}
+
+	// update user
+	err = apiCfg.dbQueries.UpdateUser(context.Background(), database.UpdateUserParams{ID: dbToken.UserID, Email: params.Email, HashedPassword: hashedPw})
+	if err != nil {
+		errResponse(w, fmt.Sprintf("Error updating user: %v", err), 500)
+		return
+	}
+
+	// respond
+	user, err := apiCfg.dbQueries.GetUserByEmail(context.Background(), params.Email)
+	if err != nil {
+		errResponse(w, fmt.Sprintf("Error getting user by updated email: %v", err), 400)
+		return
+	}
+	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, token, token})
+
+	if err != nil {
+		log.Printf("Error marshalling error response: %v", err)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write(data)
+	log.Printf("Login Successful!")
+
+}
 func (apiCfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
