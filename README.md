@@ -1,6 +1,6 @@
 # Chirpy
 
-* A backend server built in Go following a guide on [Boot.Dev](https://www.boot.dev/u/taita2) making use of JWTs, refresh tokens, webhooks, and API keys.
+* A Twitter-like backend server built in Go following a guide on [Boot.Dev](https://www.boot.dev/u/taita2) making use of JWTs, refresh tokens, webhooks, and API keys.
 
 ## Features
 * Create and login to user accounts using email and password authentication.
@@ -32,7 +32,7 @@
 * Refresh tokens can be revoked with a POST request to the /api/revoke endpoint in the following format:
   * `REQUEST: {} HEADER: "Authorization: Bearer <Refresh-Token>"`
   * `RESPONSE: 204`
-#### NOTE
+* NOTE
   * Access tokens expire after 1 hour
   * Refresh tokens expire after 60 days.
 
