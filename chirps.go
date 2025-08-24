@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,6 +12,33 @@ import (
 	"github.com/TaitA2/Chirpy/internal/database"
 	"github.com/google/uuid"
 )
+
+func (apiCfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request) {
+	chirpID, err := uuid.Parse(strings.TrimPrefix(r.URL.Path, "/api/chirps/"))
+	if err != nil {
+		error := fmt.Sprintf("Error parsing url: %v", err)
+		errResponse(w, error, 500)
+		return
+	}
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		errResponse(w, fmt.Sprintf("%v", err), 401)
+		return
+	}
+	dbToken, err := apiCfg.dbQueries.GetToken(context.Background(), token)
+	if err != nil {
+		errResponse(w, fmt.Sprintf("Error retrieving token: %v", err), 401)
+		log.Printf("Token string: %v", token)
+		return
+	}
+	err = apiCfg.dbQueries.DeleteChirp(context.Background(), database.DeleteChirpParams{UserID: dbToken.UserID, ID: chirpID})
+	if err != nil {
+		errResponse(w, fmt.Sprintf("Error deleting chirp: %v", err), 500)
+		return
+	}
+	w.WriteHeader(204)
+	log.Printf("Chirp deleted successfully!")
+}
 
 func (apiCfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request) {
 	chirpID, err := uuid.Parse(strings.TrimPrefix(r.URL.Path, "/api/chirps/"))
