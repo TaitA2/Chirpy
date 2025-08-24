@@ -22,7 +22,7 @@ func (apiCfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) 
 		errResponse(w, "Error getting token: refresh token not found", 401)
 		return
 	}
-	if time.Until(dbToken.ExpiresAt) < 1 {
+	if dbToken.ExpiresAt.Before(time.Now()) {
 		errResponse(w, "Error getting token: refresh token is expired", 401)
 		return
 	}

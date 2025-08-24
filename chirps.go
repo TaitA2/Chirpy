@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/TaitA2/Chirpy/internal/auth"
@@ -67,6 +68,7 @@ func (apiCfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request
 
 	chirps, err := apiCfg.dbQueries.GetChirps(r.Context())
 	authorID := r.URL.Query().Get("author_id")
+	sortMethod := r.URL.Query().Get("sort")
 	if err != nil {
 		log.Printf("Error getting chirps: %v", err)
 		resp := errReturn{Error: "Error getting chirps"}
@@ -91,6 +93,10 @@ func (apiCfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request
 			}
 		}
 
+	}
+	// sort
+	if sortMethod == "desc" {
+		sort.Slice(resp, func(i, j int) bool { return resp[j].CreatedAt.Before(resp[i].CreatedAt) })
 	}
 	data, err := json.Marshal(resp)
 	if err != nil {
