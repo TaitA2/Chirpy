@@ -32,7 +32,7 @@
 * Refresh tokens can be revoked with a POST request to the /api/revoke endpoint in the following format:
   * `REQUEST: {} HEADER: "Authorization: Bearer <Refresh-Token>"`
   * `RESPONSE: 204`
-#### NOTE
+* NOTE
   * Access tokens expire after 1 hour
   * Refresh tokens expire after 60 days.
 
