@@ -22,10 +22,10 @@
 ### Users
 * Users can be created or logged into with a POST request to the /api/users endpoint in the following format:
   * `REQUEST: {"email": "name@example.com", "password": "password123"}`
-  * `RESPONSE: {"ID": <"UUID">, ""CreatedAt":"<DateTime>","UpdatedAt":"<DateTime>", "email": "name@example.com", "Token": "Access-token", "RefreshToken": "Refresh-token", "IsChirpyRed": false}`
+  * `RESPONSE: {"ID": <"User-UUID">, ""CreatedAt":"<DateTime>","UpdatedAt":"<DateTime>", "email": "name@example.com", "Token": "Access-token", "RefreshToken": "Refresh-token", "IsChirpyRed": false}`
 * User credentials can be updated with a PUT request to the /api/users endpoint in the following format:
   * `REQUEST: {"email": "newemail@example.com", "password": "newpassword123"} HEADER: "Authorization: Bearer <Access-Token>"`
-  * `RESPONSE: {"ID": <"UUID">, "CreatedAt":"<DateTime>","UpdatedAt":"<DateTime>", "email": "name@example.com", "Token": "Access-token", "RefreshToken": "Refresh-token", "IsChirpyRed": false}`
+  * `RESPONSE: {"ID": <"User-UUID">, "CreatedAt":"<DateTime>","UpdatedAt":"<DateTime>", "email": "name@example.com", "Token": "Access-token", "RefreshToken": "Refresh-token", "IsChirpyRed": false}`
 * Users can generate a new access token with a POST request to the /api/refresh endpoint in the following format:
   * `REQUEST: {} HEADER: "Authorization: Bearer <Refresh-Token>"`
   * `RESPONSE: {"token": "<Access-Token>"}`
@@ -39,11 +39,20 @@
 ### Chirps
 * Chirps can be created with a POST request to the /api/chirps endpoint in the following format:
   * `REQUEST: {"body": "body of the chirp"} HEADER: "Authorization: Bearer <Access-Token>"`
-  * `RESPONSE: {"ID":"<Chirp-ID>","CreatedAt":"<DateTime>","UpdatedAt":"<DateTime>","Body":"<body of the chirp>","UserID":"<User-UUID>"}`
-* Chirps can be deleted with a DELETE request to the /api/chirps/{chirp-id} endpoint in the following format:
+  * `RESPONSE: {"ID":"<Chirp-UUID>","CreatedAt":"<DateTime>","UpdatedAt":"<DateTime>","Body":"<body of the chirp>","UserID":"<User-UUID>"}`
+* Chirps can be deleted with a DELETE request to the /api/chirps/{Chirp-UUID} endpoint in the following format:
   * `REQUEST: {} HEADER: "Authorization: Bearer <Access-Token>"`
   * `RESPONSE: 204`
 * Chirps can be viewed with a GET request to the /api/chirps endpoint
   * Results can be sorted by creation date with the query: `?sort=<asc/desc>`
   * Results can be filtered by specific author with the query: `?author=<author-id>`
-* A specific chirp can be viewed with a GET request to the /api/chirps/{chirp-id} endpoint
+* A specific chirp can be viewed with a GET request to the /api/chirps/{Chirp-UUID} endpoint
+
+### Admin
+* Server status can be viewed with a GET request to the /api/healthz endpoint
+* Site visitor count can be viewed at the /admin/metrics endpoint 
+* User database can be reset with a POST request to the /admin/reset endpoint
+
+### Webhook
+* A user can be upgraded to a Chirpy Red account with a POST request to the /api/polka/webhooks endpoint in the following format:
+  * `REQUEST: {"event": "user.upgraded","data": {"user_id": "<User-UUID"}}}`
