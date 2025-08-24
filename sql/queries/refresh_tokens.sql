@@ -12,7 +12,7 @@ returning *;
 
 -- name: RevokeToken :exec
 update refresh_tokens
-set revoked_at = NOW()
+set revoked_at = NOW(), updated_at = NOW()
 where token = $1;
 
 -- name: GetToken :one
