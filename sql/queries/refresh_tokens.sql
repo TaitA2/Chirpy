@@ -15,4 +15,6 @@ update refresh_tokens
 set revoked_at = NOW()
 where token = $1;
 
-
+-- name: GetToken :one
+select * from refresh_tokens
+where token = $1;
