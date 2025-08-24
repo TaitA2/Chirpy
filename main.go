@@ -49,18 +49,31 @@ func main() {
 	handler := http.StripPrefix("/app/", http.FileServer(http.Dir(rootPath)))
 
 	serveMux.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
+	// OK if online
 	serveMux.HandleFunc("GET /api/healthz", handlerReadiness)
+	// view number of visits
 	serveMux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
+	// reset users database
 	serveMux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
+	// create user
 	serveMux.HandleFunc("POST /api/users", apiCfg.handlerUsers)
-	serveMux.HandleFunc("PUT /api/users", apiCfg.handlerUserUpdate)
-	serveMux.HandleFunc("POST /api/chirps", apiCfg.handlerChirps)
-	serveMux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
-	serveMux.HandleFunc("GET /api/chirps/", apiCfg.handlerGetChirp)
-	serveMux.HandleFunc("DELETE /api/chirps/", apiCfg.handlerDeleteChirp)
+	// login user
 	serveMux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
+	// update user
+	serveMux.HandleFunc("PUT /api/users", apiCfg.handlerUserUpdate)
+	// create chirp
+	serveMux.HandleFunc("POST /api/chirps", apiCfg.handlerChirps)
+	// get all chirps
+	serveMux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
+	// get specific chirp
+	serveMux.HandleFunc("GET /api/chirps/", apiCfg.handlerGetChirp)
+	// delete specific chirp
+	serveMux.HandleFunc("DELETE /api/chirps/", apiCfg.handlerDeleteChirp)
+	// generate new access token
 	serveMux.HandleFunc("POST /api/refresh", apiCfg.handlerRefresh)
+	// revoke refresh token
 	serveMux.HandleFunc("POST /api/revoke", apiCfg.handlerRevoke)
+	// upgrade user to chirpy red
 	serveMux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlerUpgrade)
 
 	server := &http.Server{Handler: serveMux, Addr: ":" + port}
