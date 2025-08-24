@@ -5,8 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 func validateChirp(w http.ResponseWriter, r *http.Request) (validReturn, error) {
@@ -51,7 +49,6 @@ func validateChirp(w http.ResponseWriter, r *http.Request) (validReturn, error) 
 	log.Printf("Valid Chirp")
 	resp := validReturn{
 		CleanedBody: cleanedBody,
-		UserID:      params.UserID,
 	}
 
 	return resp, nil
@@ -73,8 +70,7 @@ func cleanBody(body string) string {
 }
 
 type parameters struct {
-	Body   string    `json:"body"`
-	UserID uuid.UUID `json:"user_id"`
+	Body string `json:"body"`
 }
 
 type errReturn struct {
@@ -82,6 +78,5 @@ type errReturn struct {
 }
 
 type validReturn struct {
-	CleanedBody string    `json:"cleaned_body"`
-	UserID      uuid.UUID `json:"user_id"`
+	CleanedBody string `json:"cleaned_body"`
 }

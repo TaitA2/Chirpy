@@ -115,13 +115,14 @@ func (apiCfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (apiCfg *apiConfig) handlerUserUpdate(w http.ResponseWriter, r *http.Request) {
-	refreshToken, err := auth.GetBearerToken(r.Header)
+	accessJWT, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		errResponse(w, fmt.Sprintf("Error getting bearer token: %v", err), 401)
 		return
 	}
+	refreshToken, err := apiCfg.dbQueries.GetToken(context.Background(), accessJWT)
 
-	userID, err := auth.ValidateJWT(refreshToken, apiCfg.jwtSecret)
+	userID, err := auth.ValidateJWT(refreshToken.Token, apiCfg.jwtSecret)
 	if err != nil {
 		errResponse(w, fmt.Sprintf("%v", err), 401)
 		return
@@ -159,8 +160,8 @@ func (apiCfg *apiConfig) handlerUserUpdate(w http.ResponseWriter, r *http.Reques
 		errResponse(w, fmt.Sprintf("Error getting user by updated email: %v", err), 400)
 		return
 	}
-	accessJWT, err := auth.MakeJWT(user.ID, apiCfg.jwtSecret)
-	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, accessJWT, refreshToken, user.IsChirpyRed.Bool})
+	accessJWT, err = auth.MakeJWT(user.ID, apiCfg.jwtSecret)
+	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, accessJWT, refreshToken.Token, user.IsChirpyRed.Bool})
 
 	if err != nil {
 		log.Printf("Error marshalling error response: %v", err)
