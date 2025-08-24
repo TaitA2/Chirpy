@@ -66,6 +66,7 @@ func (apiCfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request)
 func (apiCfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 
 	chirps, err := apiCfg.dbQueries.GetChirps(r.Context())
+	authorID := r.URL.Query().Get("author_id")
 	if err != nil {
 		log.Printf("Error getting chirps: %v", err)
 		resp := errReturn{Error: "Error getting chirps"}
@@ -79,8 +80,17 @@ func (apiCfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request
 		return
 	}
 	resp := []database.Chirp{}
-	for i := range chirps {
-		resp = append(resp, chirps[i])
+	if authorID == "" {
+		for i := range chirps {
+			resp = append(resp, chirps[i])
+		}
+	} else {
+		for i := range chirps {
+			if chirps[i].UserID.String() == authorID {
+				resp = append(resp, chirps[i])
+			}
+		}
+
 	}
 	data, err := json.Marshal(resp)
 	if err != nil {
