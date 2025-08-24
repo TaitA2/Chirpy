@@ -58,6 +58,7 @@ func (apiCfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	RefreshToken, err := auth.MakeRefreshToken()
+	log.Printf("Refresh Token: %v", RefreshToken)
 	if err != nil {
 		error := fmt.Sprintf("Error making refresh token: %v", err)
 		errResponse(w, error, 401)
