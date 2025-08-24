@@ -10,6 +10,10 @@
 * Revoke access to refresh tokens.
 * View site usage metrics
 
+## Requirements
+* Go 1.22+
+* PostgreSQL 15
+
 ## Installation
 * Chirpy can be installed using the following command:
 * `go install github.com/TaitA2/Chirpy@latest`
