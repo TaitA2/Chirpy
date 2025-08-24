@@ -40,6 +40,6 @@
 * Chirps can be created with a POST request to the /api/chirps endpoint in the following format:
   * `REQUEST: {"body": "body of the chirp"} HEADER: "Authorization: Bearer <Access-Token>"`
   * `RESPONSE: {"ID":"<Chirp-ID>","CreatedAt":"<DateTime>","UpdatedAt":"<DateTime>","Body":"<body of the chirp>","UserID":"<User-UUID>"}`
-* Chirps can be deleted with a DELET request to the /api/chirps/{chirp-id} endpoint 
+* Chirps can be deleted with a DELETE request to the /api/chirps/{chirp-id} endpoint 
   * `REQUEST: {} HEADER: "Authorization: Bearer <Access-Token>"`
   * `RESPONSE: 204`
