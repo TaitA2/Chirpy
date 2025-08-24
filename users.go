@@ -83,17 +83,17 @@ func (apiCfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (apiCfg *apiConfig) handlerUserUpdate(w http.ResponseWriter, r *http.Request) {
-	token, err := auth.GetBearerToken(r.Header)
+	refreshToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		errResponse(w, fmt.Sprintf("Error getting bearer token: %v", err), 401)
 		return
 	}
-	dbToken, err := apiCfg.dbQueries.GetToken(context.Background(), token)
+
+	userID, err := auth.ValidateJWT(refreshToken, apiCfg.jwtSecret)
 	if err != nil {
-		errResponse(w, fmt.Sprintf("Error retrieving token: %v", err), 401)
+		errResponse(w, fmt.Sprintf("%v", err), 401)
 		return
 	}
-
 	// get new user params
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
@@ -115,7 +115,7 @@ func (apiCfg *apiConfig) handlerUserUpdate(w http.ResponseWriter, r *http.Reques
 	}
 
 	// update user
-	err = apiCfg.dbQueries.UpdateUser(context.Background(), database.UpdateUserParams{ID: dbToken.UserID, Email: params.Email, HashedPassword: hashedPw})
+	err = apiCfg.dbQueries.UpdateUser(context.Background(), database.UpdateUserParams{ID: userID, Email: params.Email, HashedPassword: hashedPw})
 	if err != nil {
 		errResponse(w, fmt.Sprintf("Error updating user: %v", err), 500)
 		return
@@ -127,7 +127,8 @@ func (apiCfg *apiConfig) handlerUserUpdate(w http.ResponseWriter, r *http.Reques
 		errResponse(w, fmt.Sprintf("Error getting user by updated email: %v", err), 400)
 		return
 	}
-	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, token, token})
+	accessJWT, err := auth.MakeJWT(user.ID, apiCfg.jwtSecret)
+	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, accessJWT, refreshToken})
 
 	if err != nil {
 		log.Printf("Error marshalling error response: %v", err)
@@ -175,7 +176,18 @@ func (apiCfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 		errResponse(w, error, 401)
 		return
 	}
-	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, tokenString, ""})
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		error := fmt.Sprintf("Error making refresh token: %v", err)
+		errResponse(w, error, 401)
+		return
+	}
+	apiCfg.dbQueries.CreateToken(context.Background(), database.CreateTokenParams{
+		Token:     refreshToken,
+		UserID:    user.ID,
+		ExpiresAt: time.Now().UTC().Add(time.Duration(time.Hour * 24 * 60)),
+	})
+	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, tokenString, refreshToken})
 
 	if err != nil {
 		log.Printf("Error marshalling error response: %v", err)

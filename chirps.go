@@ -25,13 +25,12 @@ func (apiCfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Reque
 		errResponse(w, fmt.Sprintf("%v", err), 401)
 		return
 	}
-	dbToken, err := apiCfg.dbQueries.GetToken(context.Background(), token)
+	userID, err := auth.ValidateJWT(token, apiCfg.jwtSecret)
 	if err != nil {
-		errResponse(w, fmt.Sprintf("Error retrieving token: %v", err), 401)
-		log.Printf("Token string: %v", token)
+		errResponse(w, fmt.Sprintf("%v", err), 401)
 		return
 	}
-	err = apiCfg.dbQueries.DeleteChirp(context.Background(), database.DeleteChirpParams{UserID: dbToken.UserID, ID: chirpID})
+	err = apiCfg.dbQueries.DeleteChirp(context.Background(), database.DeleteChirpParams{UserID: userID, ID: chirpID})
 	if err != nil {
 		errResponse(w, fmt.Sprintf("Error deleting chirp: %v", err), 500)
 		return
