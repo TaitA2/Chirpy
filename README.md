@@ -19,6 +19,9 @@
 * `go install github.com/TaitA2/Chirpy@latest`
 
 ## Usage
+### Setup
+* Start the server by running the following command in your terminal:
+* `Chirpy`
 ### Users
 * Users can be created or logged into with a POST request to the /api/users endpoint in the following format:
   * `REQUEST: {"email": "name@example.com", "password": "password123"}`
