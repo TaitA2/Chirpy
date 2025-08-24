@@ -19,3 +19,8 @@ select * from users where email = $1;
 update users
 set email = $2, hashed_password = $3, updated_at = NOW()
 where id = $1;
+
+-- name: MakeUserRed :exec
+update users
+set is_chirpy_red = true
+where id = $1;

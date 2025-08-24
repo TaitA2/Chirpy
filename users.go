@@ -18,6 +18,13 @@ type userParams struct {
 	Email    string `json:"email"`
 }
 
+type redParams struct {
+	Event string `json:"event"`
+	Data  struct {
+		UserID uuid.UUID `json:"user_id"`
+	} `json:"data"`
+}
+
 type secureUser struct {
 	ID           uuid.UUID
 	CreatedAt    time.Time
@@ -25,8 +32,33 @@ type secureUser struct {
 	Email        string
 	Token        string
 	RefreshToken string
+	IsChirpyRed  bool
 }
 
+func (apiCfg *apiConfig) handlerUpgrade(w http.ResponseWriter, r *http.Request) {
+	key, err := auth.GetAPIKey(r.Header)
+	if key != apiCfg.apiKey {
+		errResponse(w, fmt.Sprintf("Error: Invalid api key"), 401)
+	}
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+	var params redParams
+	err = decoder.Decode(&params)
+	if err != nil {
+		error := fmt.Sprintf("Error decoding paramters: %s", err)
+		errResponse(w, error, 500)
+		return
+	}
+	if params.Event != "user.upgraded" {
+		errResponse(w, fmt.Sprintf("Errror: Invalid event: %v", params.Event), 204)
+	}
+	err = apiCfg.dbQueries.UpgradeUser(context.Background(), params.Data.UserID)
+	if err != nil {
+		errResponse(w, fmt.Sprintf("Error upgrading user: %v", err), 404)
+	}
+	w.WriteHeader(204)
+	log.Printf("User upgraded successfully!")
+}
 func (apiCfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
@@ -70,7 +102,7 @@ func (apiCfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		ExpiresAt: time.Now().UTC().Add(time.Duration(time.Hour * 24 * 60)),
 	})
 
-	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, AccessJWT, RefreshToken})
+	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, AccessJWT, RefreshToken, user.IsChirpyRed.Bool})
 
 	if err != nil {
 		log.Printf("Error marshalling error response: %v", err)
@@ -128,7 +160,7 @@ func (apiCfg *apiConfig) handlerUserUpdate(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	accessJWT, err := auth.MakeJWT(user.ID, apiCfg.jwtSecret)
-	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, accessJWT, refreshToken})
+	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, accessJWT, refreshToken, user.IsChirpyRed.Bool})
 
 	if err != nil {
 		log.Printf("Error marshalling error response: %v", err)
@@ -187,7 +219,7 @@ func (apiCfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 		UserID:    user.ID,
 		ExpiresAt: time.Now().UTC().Add(time.Duration(time.Hour * 24 * 60)),
 	})
-	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, tokenString, refreshToken})
+	data, err := json.Marshal(secureUser{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, tokenString, refreshToken, user.IsChirpyRed.Bool})
 
 	if err != nil {
 		log.Printf("Error marshalling error response: %v", err)
