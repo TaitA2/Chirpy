@@ -55,4 +55,4 @@
 
 ### Webhook
 * A user can be upgraded to a Chirpy Red account with a POST request to the /api/polka/webhooks endpoint in the following format:
-  * `REQUEST: {"event": "user.upgraded","data": {"user_id": "<User-UUID"}}}`
+  * `REQUEST: {"event": "user.upgraded","data": {"user_id": "<User-UUID"}}} HEADER: "Authorization: Api-Key <API-KEY>`
