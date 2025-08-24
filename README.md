@@ -1,6 +1,6 @@
 # Chirpy
 
-* A backend server built in Go following a guide on [Boot.Dev](https://www.boot.dev/u/taita2) making use of JWTs, refresh tokens, webhooks, and API keys.
+* A Twitter-like backend server built in Go following a guide on [Boot.Dev](https://www.boot.dev/u/taita2) making use of JWTs, refresh tokens, webhooks, and API keys.
 
 ## Features
 * Create and login to user accounts using email and password authentication.
